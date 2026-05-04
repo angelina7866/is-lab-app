@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+
+    permissions:
+      packages: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Login to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Create Dockerfile
+        run: |
+          echo "FROM alpine:latest" > Dockerfile
+          echo "CMD echo Hello" >> Dockerfile
+
+      - name: Build and push
+        run: |
+          IMAGE=ghcr.io/${{ github.repository }}
+          TAG=${GITHUB_SHA::7}
+
+          docker build -t $IMAGE:latest -t $IMAGE:$TAG .
+          docker push $IMAGE:latest
+          docker push $IMAGE:$TAG
