@@ -1,3 +1,7 @@
-FROM alpine:latest
+deploy:
+  runs-on: ubuntu-latest
+  needs: docker
 
-CMD echo "CI-CD SUCCESS"
+  steps:
+    - name: Fake deploy
+      run: echo "Deploy success"
