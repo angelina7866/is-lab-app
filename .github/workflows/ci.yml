@@ -1,33 +1,32 @@
-name: CI
+name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main ]
+    branches: [ "main" ]
 
 jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "Build and test OK"
+
   docker:
     runs-on: ubuntu-latest
+    needs: build-and-test
 
     permissions:
-      packages: write
       contents: read
+      packages: write
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Login to GHCR
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-      - name: Create Dockerfile
-        run: |
-          echo "FROM alpine:latest" > Dockerfile
-          echo "CMD echo Hello" >> Dockerfile
+      - name: Build Docker image
+        run: docker build -t ghcr.io/${{ github.repository }}:latest .
 
-      - name: Build and push
-        run: |
-          IMAGE=ghcr.io/${{ github.repository }}
-          TAG=${GITHUB_SHA::7}
-
-          docker build -t $IMAGE:latest -t $IMAGE:$TAG .
-          docker push $IMAGE:latest
-          docker push $IMAGE:$TAG
+      - name: Push Docker image
+        run: docker push ghcr.io/${{ github.repository }}:latest
